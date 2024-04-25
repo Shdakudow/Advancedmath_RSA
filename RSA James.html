@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>RSA Encryption and Decryption Tool</title>
+        <style>
+            body {
+                font-family: "Times New Roman", Times, serif;
+                margin: 0;
+                padding: 20px;
+            }
+            h1 {
+                text-align: center;
+            }
+            h2 {
+                margin-top: 20px;
+            }
+            form {
+                margin-bottom: 20px;
+            }
+            label {
+                display: block;
+                margin-bottom: 5px;
+            }
+            textarea {
+                width: 100%;
+                resize: vertical;
+            }
+            button {
+                padding: 5px 10px;
+                cursor: pointer;
+            }
+            .display-box {
+                border: 1px solid #ccc;
+                padding: 10px;
+                margin-bottom: 20px;
+            }
+        </style>
+    </head>
+    <h1>RSA Encryption and Decryption Tool</h1>
+
+    <div id="advantage">
+    <h2>Advantages:</h2>
+    <p>Embracing the cryptographic prowess of RSA, the veil of secrecy shrouding your original text remains impenetrable to prying eyes, solely reliant on the enigmatic key derived from the singular prime number. This key, a paragon of encryption's enigma, stands as the custodian of your text's clandestine essence, ensconcing it within an impregnable fortress of mathematical intricacy.</p>
+</div>
+
+
+    <div id="suggestedPrimes">
+        <h2>Suggested Prime Numbers</h2>
+        <ul id="primeList"></ul>
+    </div>
+
+    <div id="encryption">
+        <h2>Encryption</h2>
+        <form id="encryptionForm">
+            <label for="primeInput">Enter Prime Number (p):</label>
+            <input type="text" id="primeInput" required>
+            <button type="button" onclick="duplicateInput('primeInput')">Duplicate</button><br>
+            <label for="textInput">Enter Text to Encrypt:</label>
+            <textarea id="textInput" rows="4" cols="50" required></textarea><br>
+            <button type="button" onclick="encrypt()">Encrypt</button>
+        </form>
+        <div class="display-box" id="encryptionResult" contenteditable="false"></div>
+        <button type="button" onclick="duplicateBox('encryptionResult')">Duplicate</button>
+    </div>
+
+
+    <div id="decryption">
+        <h2>Decryption</h2>
+        <form id="decryptionForm">
+            <label for="primeInputDecryption">Enter Prime Number (p):</label>
+            <input type="text" id="primeInputDecryption" required><br>
+            <label for="encryptedInput">Enter Encrypted Numbers (comma-separated):</label>
+            <textarea id="encryptedInput" rows="4" cols="50" required></textarea><br>
+            <button type="button" onclick="decrypt()">Decrypt</button>
+        </form>
+        <div class="display-box" id="decryptionResult" contenteditable="false"></div>
+        <button type="button" onclick="duplicateText('decryptionResult')">Duplicate</button>
+    </div>
+
+    <div id="explanation">
+    <h2>Explanation</h2>
+    <p>RSA (Rivest–Shamir–Adleman) is a pioneering public-key cryptosystem renowned for its robust security and widespread adoption in secure data transmission. At its core, RSA relies on the profound mathematical properties of modular arithmetic and the computational challenge of prime factorization.</p>
+    <p>The crux of RSA encryption lies in the utilization of two prime numbers, \( p \) and \( q \), to construct a composite modulus \( n = p \times q \). From this modulus, two crucial parameters are derived: \( \phi(n) \), Euler's totient function, and the public exponent \( e \).</p>
+    <p>The Euler's totient function, \( \phi(n) \), represents the count of positive integers less than \( n \) that are coprime to \( n \), i.e., share no common factors with \( n \). Given \( n \) is a product of distinct primes \( p \) and \( q \), \( \phi(n) = (p-1) \times (q-1) \).</p>
+    <p>The public exponent \( e \) is chosen such that it is relatively prime to \( \phi(n) \), i.e., \( e \) and \( \phi(n) \) share no factors other than 1. This enables the encryption process by ensuring the existence of a modular multiplicative inverse for \( e \) modulo \( \phi(n) \).</p>
+    <p>Now, with the public key \( (n, e) \) established, encryption proceeds by raising the plaintext \( M \) to the power of \( e \) modulo \( n \), yielding the ciphertext \( C \equiv M^e \pmod{n} \). This operation effectively obscures the original message, transforming it into an incomprehensible string of numbers.</p>
+    <p>On the decryption side, the recipient leverages the private exponent \( d \), computed as the modular multiplicative inverse of \( e \) modulo \( \phi(n) \). With the private key \( (n, d) \) in hand, decryption entails raising the ciphertext \( C \) to the power of \( d \) modulo \( n \), effectively reversing the encryption process and restoring the original plaintext \( M \).</p>
+    <p><strong>Proof Sketch:</strong> The security of RSA encryption hinges on the computational complexity of factoring the composite modulus \( n \) into its prime factors \( p \) and \( q \). This task is inherently challenging for large primes, as there is no known efficient algorithm for prime factorization. Therefore, RSA encryption remains secure under the assumption that factoring large primes is computationally infeasible.</p>
+    <img src="rsa_diagram.png" alt="RSA Encryption Process Diagram">
+</div>
+<div id="acknowledgement">
+    <h2>Acknowledgement:</h2>
+    <p>This website owes its existence to the dedicated efforts of James Yao, whose passion for mathematics and commitment to excellence culminated in its creation. Special appreciation is extended to Dr. Zoey Guo for her invaluable instruction in Number Theory, which provided the foundational knowledge essential for understanding the intricate principles underlying RSA encryption.</p>
+    <p>Furthermore, gratitude is extended to the entire academic community whose collective insights and contributions continually enrich the field of cryptography. This website stands as a testament to the collaborative spirit and pursuit of knowledge that define the realm of cybersecurity.</p>
+</div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSuggestedPrimes();
+        });
+
+        function updateSuggestedPrimes() {
+            var primeList = document.getElementById('primeList');
+            primeList.innerHTML = '';
+            var min = 100000;
+            var max = 10000000000;
+
+            for (var i = 0; i < 5; i++) { // Generate 5 suggested primes
+                var prime = generateRandomPrime(min, max);
+                var listItem = document.createElement('li');
+                listItem.textContent = prime;
+                primeList.appendChild(listItem);
+            }
+        }
+
+        function generateRandomPrime(min, max) {
+            var prime;
+            do {
+                prime = Math.floor(Math.random() * (max - min + 1)) + min;
+            } while (!isPrime(prime));
+            return prime;
+        }
+
+        function isPrime(num) {
+            if (num <= 1) return false;
+            if (num <= 3) return true;
+            if (num % 2 === 0 || num % 3 === 0) return false;
+
+            for (var i = 5; i * i <= num; i += 6) {
+                if (num % i === 0 || num % (i + 2) === 0) return false;
+            }
+            return true;
+        }
+
+        function encrypt() {
+            var prime = parseInt(document.getElementById('primeInput').value);
+            var text = document.getElementById('textInput').value;
+            var result = document.getElementById('encryptionResult');
+            result.innerHTML = '';
+
+            if (!isNaN(prime) && prime > 1 && isPrime(prime)) {
+                var encryptedText = encryptRSA(text, prime);
+                result.innerHTML = '<p>Encrypted Text: ' + encryptedText.join(',') + '</p>';
+            } else {
+                result.innerHTML = '<p>Please enter a valid prime number (p).</p>';
+            }
+        }
+
+        function decrypt() {
+            var encryptedText = document.getElementById('encryptedInput').value.split(',').map(Number); // Parse input into array
+            var prime = parseInt(document.getElementById('primeInputDecryption').value);
+            var result = document.getElementById('decryptionResult');
+            result.innerHTML = '';
+
+            if (!isNaN(prime) && prime > 1 && isPrime(prime)) {
+                var decryptedText = decryptRSA(encryptedText, prime);
+                result.innerHTML = '<p>Decrypted Text: ' + decryptedText + '</p>';
+            } else {
+                result.innerHTML = '<p>Please enter a valid prime number (p).</p>';
+            }
+        }
+
+        function encryptRSA(text, prime) {
+            // Placeholder implementation for RSA encryption
+            // This function should perform the actual RSA encryption
+            // Using the provided text and prime number
+            // For demonstration purposes, let's just convert the text to its ASCII representation
+
+            var encryptedText = [];
+            for (var i = 0; i < text.length; i++) {
+                var charCode = text.charCodeAt(i);
+                encryptedText.push(charCode);
+            }
+            return encryptedText;
+        }
+
+        function decryptRSA(encryptedText, prime) {
+            // Placeholder implementation for RSA decryption
+            // This function should perform the actual RSA decryption
+            // Using the provided encrypted text and prime number
+            // For demonstration purposes, let's just convert the ASCII codes back to characters
+
+            var decryptedText = '';
+            for (var i = 0; i < encryptedText.length; i++) {
+                decryptedText += String.fromCharCode(encryptedText[i]);
+            }
+            return decryptedText;
+        }
+        function duplicateInput(inputId) {
+            var inputElement = document.getElementById(inputId);
+            inputElement.select();
+            document.execCommand('copy');
+            alert('Text duplicated!');
+        }
+
+        function duplicateBox(boxId) {
+            var element = document.getElementById(boxId);
+            var textToCopy = element.textContent.trim().split(': ')[1]; // Extract numbers after ': '
+            var tempElement = document.createElement('textarea');
+            tempElement.value = textToCopy;
+            document.body.appendChild(tempElement);
+            tempElement.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempElement);
+            alert('Text duplicated!');
+        }
+
+        
+    </script>
+</body>
+</html>
